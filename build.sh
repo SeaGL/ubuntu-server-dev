@@ -50,6 +50,26 @@ cat > $mnt/etc/systemd/system/systemd-networkd-wait-online.service.d/override.co
 TimeoutSec=10s
 EOF
 
+# Ensure that /proc/sys/net is writable to allow Docker to set
+# /proc/sys/net/ipv6/conf/*/disable_ipv6. Works around moby/moby#47769 as
+# suggested in the Docker Engine 27.0.1 release notes.
+cat > $mnt/etc/systemd/system/remount-proc-sys.service <<EOF
+[Unit]
+Description=Remount /proc/sys as writable
+Before=docker.service
+ConditionVirtualization=docker
+ConditionPathExists=/proc/sys
+ConditionPathIsReadWrite=!/proc/sys
+
+[Service]
+Type=oneshot
+ExecStart=mount --options rw,remount /proc/sys
+
+[Install]
+WantedBy=docker.service
+EOF
+systemctl --root=$mnt enable remount-proc-sys.service
+
 # Generate SSH keys on first boot
 cat > $mnt/etc/systemd/system/ssh-hostkey-generate.service <<EOF
 [Unit]
