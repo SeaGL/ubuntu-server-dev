@@ -43,12 +43,10 @@ systemctl --root=$mnt disable tpm-udev.path
 # Slice rootfs config out of fstab, since LABEL=cloudimg-rootfs doesn't exist in the container environment and systemd-remount-fs.service complains about not being able to find it
 chroot $mnt /bin/sed -i '/LABEL=cloudimg-rootfs/d' /etc/fstab
 
-# Networking setup is expected to not actually cross a network boundary (i.e. only talk to the container host), so decrease the timeout because all operations here should be fast
-mkdir $mnt/etc/systemd/system/systemd-networkd-wait-online.service.d/
-cat > $mnt/etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf <<EOF
-[Service]
-TimeoutSec=10s
-EOF
+# systemd-networkd-wait-online fails when no interfaces are managed by
+# systemd-networkd (systemd/systemd#27822). Per the response to
+# systemd/systemd#29388, it should simply be disabled in this situation.
+rm $mnt/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
 
 # Generate SSH keys on first boot
 cat > $mnt/etc/systemd/system/ssh-hostkey-generate.service <<EOF
