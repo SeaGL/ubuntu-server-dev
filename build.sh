@@ -35,7 +35,12 @@ newcontainer=$(buildah from scratch)
 mnt=$(buildah mount $newcontainer)
 
 # We extract from tar into a mount instead of using `buildah copy` to ensure as direct a path as possible into the final image, so that all these extra attributes are correctly created
-tar --numeric-owner --preserve-permissions --same-owner --acls --selinux --xattrs -C $mnt -xvf $filename
+tar_options=(
+	--extract --file="$filename" --directory="$mnt"
+	--acls --numeric-owner --preserve-permissions --same-owner --selinux --xattrs
+)
+[ -t 1 ] || tar_options+=(--verbose)
+tar "${tar_options[@]}"
 
 # Disable TPM-related units, which fail at runtime in the container environment
 systemctl --root=$mnt disable tpm-udev.path
