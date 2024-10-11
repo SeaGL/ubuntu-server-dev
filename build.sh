@@ -15,7 +15,7 @@ echo "Building Ubuntu Server dev image for $version $codename..."
 # TODO verify this file
 # TODO deal with checking for updates to this file, somehow
 filename=ubuntu-$version-server-cloudimg-amd64-root.tar.xz
-wget --no-clobber https://cloud-images.ubuntu.com/releases/$version/release/$filename
+wget --timestamping https://cloud-images.ubuntu.com/releases/$version/release/$filename
 
 if ! [ $(id -u) = 0 ]; then
 	# Need to be actual root to `mknod` things in /dev.
